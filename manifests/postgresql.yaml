@@ -1,0 +1,36 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: postgres
+spec:
+  bootstrap:
+    initdb: # init a new database on cluster bootstrap
+      database: odoo
+      owner: odoo
+      postInitSQL:
+        - CREATE DATABASE "session-db" WITH OWNER odoo; # Session are stored in database with session_db addon available in OCA
+        - ALTER USER "odoo" WITH CREATEDB;
+  enableSuperuserAccess: true # By default superuser access is not created on cluster bootstrap
+  imageName: ghcr.io/cloudnative-pg/postgresql:16.3
+  imagePullPolicy: Never # Only for the demo
+  instances: 1
+  postgresql:
+    parameters: # postgresql paramaters
+      auto_explain.log_min_duration: 500ms
+      checkpoint_completion_target: "0.9"
+      default_statistics_target: "100"
+      effective_cache_size: 1536MB
+      effective_io_concurrency: "200"
+      log_min_duration_statement: 20ms
+      maintenance_work_mem: 128MB
+      max_connections: "300"
+      max_wal_size: 8GB
+      min_wal_size: 2GB
+      pg_stat_statements.max: "10000"
+      pg_stat_statements.track: all
+      random_page_cost: "1.1"
+      shared_buffers: 512MB
+      wal_buffers: 16MB
+      work_mem: 30MB
+  storage:
+    size: 10Gi

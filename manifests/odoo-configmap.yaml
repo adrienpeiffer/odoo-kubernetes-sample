@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odoo-env
+data:
+  DB_HOST: postgres-rw # Service provided by CNPG
+  DB_PORT_5432_TCP_ADDR: postgres-rw # for odoo image
+  PGDATABASE: odoo # for postgresql client
+  PGHOST: postgres-rw # for postgresql client
+  SESSION_DB_URI: postgres:///session-db # for session_db addon

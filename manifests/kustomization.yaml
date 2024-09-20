@@ -1,0 +1,6 @@
+resources:
+  - postgresql.yaml
+  - odoo-configmap.yaml
+  - odoo-deployment.yaml
+  - odoo-service.yaml
+  - odoo-ingress.yaml

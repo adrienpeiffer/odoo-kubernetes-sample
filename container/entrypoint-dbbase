@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+import subprocess
+import sys
+import time
+import psycopg2
+
+def check_call(cmd):
+    print(" ".join(cmd))
+    sys.stdout.flush()
+    subprocess.check_call(cmd)
+
+def is_initialized(database):
+    is_initialized = False
+    try:
+        with psycopg2.connect(f"dbname={database}") as conn:
+            with conn.cursor() as cur:
+                query = """
+                    SELECT c.relname
+                    FROM pg_class c
+                    JOIN pg_namespace n ON (n.oid = c.relnamespace)
+                    WHERE c.relname = 'ir_module_module'
+                    AND c.relkind IN ('r', 'v', 'm')
+                    AND n.nspname = current_schema
+                """
+                cur.execute(query)
+                rec = cur.fetchone()
+                is_initialized = bool(rec)
+    except psycopg2.OperationalError:
+        pass
+    return is_initialized
+
+# wait for postgres to be ready
+sleep = 1
+while sleep < 64:
+    if subprocess.call(["pg_isready"]) == 0:
+        break
+    print("Waiting for postgres...")
+    time.sleep(sleep)
+    sleep = sleep * 2
+else:
+    raise SystemExit("postgres is not ready, giving up")
+
+db_name = "odoo"
+
+if db_name:
+    for database in db_name.split(","):
+        if not is_initialized(database):
+            check_call(
+                [
+                    "odoo",
+                    "-i",
+                    "web,base",
+                    "-d",
+                    db_name,
+                    "--stop-after-init",
+                ]
+            )
