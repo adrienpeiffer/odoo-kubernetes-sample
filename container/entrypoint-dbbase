@@ -40,7 +40,7 @@ while sleep < 64:
 else:
     raise SystemExit("postgres is not ready, giving up")
 
-db_name = "odoo,session-db"
+db_name = "odoo"
 
 if db_name:
     for database in db_name.split(","):

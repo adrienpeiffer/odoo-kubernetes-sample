@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: odoo
+  namespace: odoo
 spec:
   replicas: 1
   selector:
@@ -29,8 +30,8 @@ spec:
               topologyKey: topology.kubernetes.io/region
       initContainers:
         - name: odoo-init
-          image: odoo-kubernetes-sample:latest
-          imagePullPolicy: Never # For demo purpose. Image is pushed manually
+          image: yusuke1998/kubernetes-odoo:17
+          imagePullPolicy: Always # Changed from Never for Digital Ocean cluster
           args:
             - /entrypoint-dbbase
           env: &env
@@ -53,17 +54,17 @@ spec:
                 name: odoo-env
       containers:
         - name: odoo
-          image: odoo-kubernetes-sample:latest
-          imagePullPolicy: Never # For demo purpose. Image is pushed manually
+          image: yusuke1998/kubernetes-odoo:17
+          imagePullPolicy: Always # Changed from Never for Digital Ocean cluster
           env: *env
           envFrom: *envFrom
           resources:
             limits:
-              cpu: "1"
-              memory: 1Gi
+              cpu: "500m"
+              memory: 512Mi
             requests:
-              cpu: "1"
-              memory: 1Gi
+              cpu: "250m"
+              memory: 256Mi
           ports:
             - containerPort: 8069
               name: web
@@ -76,3 +77,15 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 2
+          volumeMounts:
+            - name: odoo-config-secret
+              mountPath: /etc/odoo/odoo.conf
+              subPath: odoo.conf
+              readOnly: true
+      volumes:
+        - name: odoo-config-secret
+          secret:
+            secretName: odoo-config-secret
+            items:
+              - key: odoo.conf
+                path: odoo.conf

@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: odoo
+  labels:
+    name: odoo
+    app: odoo
+    environment: production

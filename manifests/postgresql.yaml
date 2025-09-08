@@ -2,6 +2,7 @@ apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: postgres
+  namespace: odoo
 spec:
   bootstrap:
     initdb: # init a new database on cluster bootstrap
@@ -12,7 +13,7 @@ spec:
         - ALTER USER "odoo" WITH CREATEDB;
   enableSuperuserAccess: true # By default superuser access is not created on cluster bootstrap
   imageName: ghcr.io/cloudnative-pg/postgresql:16.3
-  imagePullPolicy: Never # Only for the demo
+  imagePullPolicy: Always # Changed from Never for Digital Ocean cluster
   instances: 1
   postgresql:
     parameters: # postgresql paramaters
