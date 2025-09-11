@@ -1,0 +1,45 @@
+# Base from odoo official image 
+FROM odoo:16.0
+
+# Copy script which initialize the database (odoo -i)
+COPY ./container/entrypoint-dbbase /entrypoint-dbbase
+
+# Copy script to create S3 storage configuration
+COPY ./create_fsprod_storage.py /var/lib/odoo/create_fsprod_storage.py
+
+USER root
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends git ca-certificates python3-pip \
+ && rm -rf /var/lib/apt/lists/*
+USER odoo
+
+# Install Python libraries for fs_attachment S3 backend (DigitalOcean Spaces)
+RUN pip3 install --no-cache-dir --user \
+    fs-s3fs \
+    "fsspec>=2024.5.0" \
+    "s3fs>=2024.5.0" \
+    "Werkzeug==2.3.7" \
+    "MarkupSafe==2.1.3" \
+    "Jinja2==3.1.2"
+
+# Clone addons from Git repositories
+COPY ./addons-git.txt /tmp/addons-git.txt
+
+RUN set -eux; \
+    mkdir -p /var/lib/odoo/extra-addons /var/lib/odoo/custom-addons; \
+    # Process git repositories, handling Windows line endings
+    grep -v '^#\|^$' /tmp/addons-git.txt | tr -d '\r' | while read -r REPO; do \
+        [ -z "$REPO" ] && continue; \
+        URL="${REPO%@*}"; \
+        BR="${REPO##*@}"; \
+        [ "$URL" = "$BR" ] && BR=16.0; \
+        NAME=$(basename "$URL" .git); \
+        echo "Cloning $URL (branch: $BR)"; \
+        git clone --depth=1 --branch "$BR" "$URL" "/var/lib/odoo/extra-addons/$NAME"; \
+    done; \
+    # Create symlinks for all modules
+    find /var/lib/odoo/extra-addons -name __manifest__.py -exec dirname {} \; | \
+        while read -r MODDIR; do \
+            ln -s "$MODDIR" "/var/lib/odoo/custom-addons/$(basename "$MODDIR")" 2>/dev/null || true; \
+        done; \
+    echo "Completed addon installation"

@@ -17,7 +17,6 @@ spec:
     spec:
       affinity:
         podAffinity:
-          # here we want to deploy on the same region the the primary instance of postgres
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
                 matchExpressions:
@@ -30,33 +29,92 @@ spec:
               topologyKey: topology.kubernetes.io/region
       initContainers:
         - name: odoo-init
-          image: yusuke1998/kubernetes-odoo:17
-          imagePullPolicy: Always # Changed from Never for Digital Ocean cluster
-          args:
+          image: yusuke1998/kubernetes-odoo:16.1.8
+          imagePullPolicy: Always
+          command:
             - /entrypoint-dbbase
-          env: &env
+          env:
             - name: PGUSER
-              valueFrom: &pguser
+              valueFrom:
                 secretKeyRef:
                   key: username
-                  name: postgres-app # Provided by CNPG
-            - name: POSTGRES_USER
-              valueFrom: *pguser
+                  name: postgres-app
             - name: PGPASSWORD
-              valueFrom: &pgpassword
+              valueFrom:
                 secretKeyRef:
                   key: password
-                  name: postgres-app # Provided by CNPG
-            - name: POSTGRES_PASSWORD
-              valueFrom: *pgpassword
+                  name: postgres-app
+            - name: PGHOST
+              valueFrom:
+                secretKeyRef:
+                  key: host
+                  name: postgres-app
+            - name: PGPORT
+              valueFrom:
+                secretKeyRef:
+                  key: port
+                  name: postgres-app
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  key: dbname
+                  name: postgres-app
           envFrom: &envFrom
             - configMapRef:
-                name: odoo-env
+                name: odoo-unified-config
+            - secretRef:
+                name: odoo-unified-secret
+          volumeMounts: &volumeMounts
+            - name: odoo-unified-secret
+              mountPath: /etc/odoo/odoo.conf
+              subPath: odoo.conf
+              readOnly: true
+            - name: odoo-unified-config
+              mountPath: /etc/odoo/fsprod.ini
+              subPath: fsprod.ini
+              readOnly: true
+            - name: odoo-unified-secret
+              mountPath: /etc/odoo/fsprod_secret.ini
+              subPath: fsprod_secret.ini
+              readOnly: true
       containers:
         - name: odoo
-          image: yusuke1998/kubernetes-odoo:17
-          imagePullPolicy: Always # Changed from Never for Digital Ocean cluster
-          env: *env
+          image: yusuke1998/kubernetes-odoo:16.1.8
+          imagePullPolicy: Always
+          command:
+            - bash
+          args:
+            - -lc
+            - |
+              # Activamos server_environment en odoo.conf
+              echo "server_environment = fsprod" >> /etc/odoo/odoo.conf
+              exec odoo -c /etc/odoo/odoo.conf
+          env:
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: postgres-app
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: postgres-app
+            - name: PGHOST
+              valueFrom:
+                secretKeyRef:
+                  key: host
+                  name: postgres-app
+            - name: PGPORT
+              valueFrom:
+                secretKeyRef:
+                  key: port
+                  name: postgres-app
+            - name: PGDATABASE
+              valueFrom:
+                secretKeyRef:
+                  key: dbname
+                  name: postgres-app
           envFrom: *envFrom
           resources:
             limits:
@@ -77,15 +135,31 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 10
             timeoutSeconds: 2
-          volumeMounts:
-            - name: odoo-config-secret
+          volumeMounts: &volumeMounts
+            - name: odoo-unified-secret
               mountPath: /etc/odoo/odoo.conf
               subPath: odoo.conf
               readOnly: true
+            - name: odoo-unified-config
+              mountPath: /etc/odoo/fsprod.ini
+              subPath: fsprod.ini
+              readOnly: true
+            - name: odoo-unified-secret
+              mountPath: /etc/odoo/fsprod_secret.ini
+              subPath: fsprod_secret.ini
+              readOnly: true
       volumes:
-        - name: odoo-config-secret
+        - name: odoo-unified-secret
           secret:
-            secretName: odoo-config-secret
+            secretName: odoo-unified-secret
             items:
               - key: odoo.conf
                 path: odoo.conf
+              - key: fsprod_secret.ini
+                path: fsprod_secret.ini
+        - name: odoo-unified-config
+          configMap:
+            name: odoo-unified-config
+            items:
+              - key: fsprod.ini
+                path: fsprod.ini

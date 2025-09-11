@@ -1,0 +1,9 @@
+# One repo per line, optional @branch (defaults to 16.0)
+# Examples from OCA:
+# https://github.com/OCA/knowledge.git@16.0
+# https://github.com/OCA/server-tools.git@16.0
+# https://github.com/OCA/server-ux.git@16.0
+
+https://github.com/OCA/server-tools.git@16.0
+https://github.com/OCA/storage.git@16.0
+https://github.com/OCA/server-env.git@16.0

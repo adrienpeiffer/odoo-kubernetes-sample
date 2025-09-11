@@ -6,8 +6,8 @@ namespace: odoo
 resources:
   - namespace.yaml
   - postgresql.yaml
-  - odoo-configmap.yaml
   - odoo-deployment.yaml
   - odoo-service.yaml
   - odoo-ingress.yaml
-  - odoo-config-secret.yaml
+  - odoo-unified-configmap.yaml
+  - odoo-unified-secret.yaml

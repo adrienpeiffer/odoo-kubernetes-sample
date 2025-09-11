@@ -49,9 +49,11 @@ if db_name:
                 [
                     "odoo",
                     "-i",
-                    "web,base",
+                    "web,base,server_environment,server_environment_ir_config_parameter,fs_storage,fs_attachment,fs_attachment_s3,session_db",
                     "-d",
                     database,
                     "--stop-after-init",
                 ]
             )
+            print("Installing modules completed, now configuring S3 storage...")
+            check_call(["python3", "/var/lib/odoo/create_fsprod_storage.py"])

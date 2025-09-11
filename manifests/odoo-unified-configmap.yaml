@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: odoo-unified-config
+  namespace: odoo
+data:
+  # Server environment configuration for fs_storage
+  fsprod.ini: |
+    [fs_storage.fsprod]
+    protocol=s3
+    directory_path=odoo-k8s-space/attachments
+    use_as_default_for_attachments=True
+    use_filename_obfuscation=True
+    eval_options_from_env=False
+
+    [ir.config_parameter]
+    ir_attachment.location=fs
+    ir_attachment.location.fs=fsprod
+  
+  # Environment variables for the deployment
+  RUNNING_ENV: fsprod
+  SERVER_ENVIRONMENT_FILES_DIRECTORY: /etc/odoo
+  
+  # Database connection variables
+  DB_HOST: postgres-rw
+  DB_PORT_5432_TCP_ADDR: postgres-rw
+  PGDATABASE: odoo
+  PGHOST: postgres-rw
+  SESSION_DB_URI: postgres:///session-db
